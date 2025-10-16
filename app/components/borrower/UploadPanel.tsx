@@ -8,6 +8,7 @@ import { NeoCard } from '../ui/NeoCard';
 import { NeoButton } from '../ui/NeoButton';
 import { NeoBadge } from '../ui/NeoBadge';
 import { useToast } from '../ui/NeoToast';
+import { SecretVaultManager } from './SecretVaultManager';
 
 interface AnalyzedDocument {
   category: string;
@@ -22,6 +23,9 @@ export function UploadPanel() {
   const uploadDocument = useMutation(api.documents.uploadDocument);
   const deleteDocument = useMutation(api.documents.deleteDocument);
   const { showToast } = useToast();
+  
+  // SecretVault integration
+  const vaultManager = SecretVaultManager();
   
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -76,6 +80,12 @@ export function UploadPanel() {
       return;
     }
 
+    // Check if SecretVault is set up
+    if (!vaultManager.hasKeypair) {
+      showToast('Please setup SecretVault first to securely store documents', 'danger');
+      return;
+    }
+
     setIsUploading(true);
 
     for (const file of imageFiles) {
@@ -86,14 +96,16 @@ export function UploadPanel() {
         showToast(`Analyzing ${file.name}...`, 'info');
 
         let analysisResult: AnalyzedDocument;
+        let base64Image: string;
 
         if (file.type.startsWith('image/')) {
           // Handle image files
-          const base64 = await convertFileToBase64(file);
-          analysisResult = await analyzeDocumentWithOpenAI(base64, file.name);
+          base64Image = await convertFileToBase64(file);
+          analysisResult = await analyzeDocumentWithOpenAI(base64Image, file.name);
         } else {
           // For PDFs, we'll need to convert to image first or handle differently
           // For now, let's create a mock analysis for PDFs
+          base64Image = await convertFileToBase64(file);
           analysisResult = {
             category: 'Bank Statement',
             documentType: 'PDF Document',
@@ -104,7 +116,7 @@ export function UploadPanel() {
         }
 
         // Upload to database with analysis results
-        await uploadDocument({
+        const documentId = await uploadDocument({
           vaultRef: `vault_${Math.random().toString(36).substr(2, 16)}`,
           filename: file.name,
           category: analysisResult.category,
@@ -115,6 +127,10 @@ export function UploadPanel() {
           rawOutput: JSON.stringify(analysisResult), // Store the complete analysis result
         });
 
+        // Store in SecretVault (encrypted storage)
+        showToast(`Encrypting ${file.name} in SecretVault...`, 'info');
+        await vaultManager.storeInVault(documentId, analysisResult, base64Image);
+
         setAnalyzingFiles(prev => {
           const newSet = new Set(prev);
           newSet.delete(fileId);
@@ -122,7 +138,7 @@ export function UploadPanel() {
         });
 
         showToast(
-          `✅ ${file.name} analyzed: ${analysisResult.documentType} (${(analysisResult.confidence * 100).toFixed(0)}% confidence)`,
+          `✅ ${file.name} analyzed and secured: ${analysisResult.documentType} (${(analysisResult.confidence * 100).toFixed(0)}% confidence)`,
           'success'
         );
 
@@ -211,16 +227,19 @@ export function UploadPanel() {
     <NeoCard bg="bg-white">
       <h3 className="text-2xl font-black uppercase mb-6">Upload Financial Documents</h3>
 
+      {/* SecretVault Status */}
+      <vaultManager.VaultStatus />
+
       <div 
         className={`border-4 border-dashed p-8 mb-6 text-center transition-colors cursor-pointer ${
           dragActive 
             ? 'border-primary bg-primary bg-opacity-20' 
             : 'border-foreground bg-secondary bg-opacity-20'
-        }`}
+        } ${!vaultManager.hasKeypair ? 'opacity-50' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={openFileDialog}
+        onClick={vaultManager.hasKeypair ? openFileDialog : undefined}
       >
         <input
           ref={fileInputRef}
@@ -229,25 +248,26 @@ export function UploadPanel() {
           accept="image/*,.pdf"
           onChange={handleFileInputChange}
           className="hidden"
+          disabled={!vaultManager.hasKeypair}
         />
         
         <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
         <p className="font-bold text-lg mb-2">
-          {dragActive ? 'Drop files here' : 'Click to upload or drag & drop'}
+          {dragActive ? 'Drop files here' : vaultManager.hasKeypair ? 'Click to upload or drag & drop' : 'Setup SecretVault to upload'}
         </p>
         <p className="text-sm font-semibold mb-2 text-gray-600">
           📱 Bank statements, bills, pay stubs, mobile money records
         </p>
         <p className="text-xs font-bold text-gray-500">
-          Supports: JPG, PNG, PDF • AI analyzes content automatically
+          Supports: JPG, PNG, PDF • AI analyzes + SecretVault encryption
         </p>
         {isUploading && (
           <div className="mt-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-white font-bold text-sm rounded">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Analyzing documents...
+              Analyzing & encrypting documents...
             </div>
           </div>
         )}
@@ -263,14 +283,14 @@ export function UploadPanel() {
               size="sm"
               variant="accent"
               onClick={openFileDialog}
-              disabled={isUploading}
+              disabled={isUploading || !vaultManager.hasKeypair}
             >
               + {cat}
             </NeoButton>
           ))}
         </div>
         <p className="text-xs font-semibold text-gray-500 mt-2">
-          AI will automatically categorize your documents
+          AI will automatically categorize your documents + store in SecretVault
         </p>
       </div>
 
@@ -296,13 +316,17 @@ export function UploadPanel() {
               <div key={file._id} className="p-4 border-4 border-foreground bg-white">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <svg className="w-6 h-6 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="text-xs mt-1">🔐</span>
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-bold text-sm">{file.filename}</p>
                         <NeoBadge variant="success">{file.category}</NeoBadge>
+                        <NeoBadge variant="accent">Encrypted</NeoBadge>
                         {file.confidence && (
                           <NeoBadge variant={file.confidence > 0.8 ? 'success' : file.confidence > 0.6 ? 'accent' : 'neutral'}>
                             {(file.confidence * 100).toFixed(0)}%
@@ -336,18 +360,27 @@ export function UploadPanel() {
                       )}
                       
                       <p className="text-xs font-semibold text-gray-500 mt-2">
-                        Uploaded {new Date(file.uploadedAt).toLocaleDateString()}
+                        Uploaded {new Date(file.uploadedAt).toLocaleDateString()} • Stored in SecretVault
                       </p>
                     </div>
                   </div>
-                  <NeoButton
-                    size="sm"
-                    variant="danger"
-                    onClick={() => handleDeleteDocument(file._id, file.filename)}
-                    disabled={deletingFiles.has(file._id)}
-                  >
-                    Delete
-                  </NeoButton>
+                  <div className="flex flex-col gap-2">
+                    <NeoButton
+                      size="sm"
+                      variant="accent"
+                      onClick={() => vaultManager.retrieveFromVault(file._id)}
+                    >
+                      View Encrypted
+                    </NeoButton>
+                    <NeoButton
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleDeleteDocument(file._id, file.filename)}
+                      disabled={deletingFiles.has(file._id)}
+                    >
+                      Delete
+                    </NeoButton>
+                  </div>
                 </div>
               </div>
             ))}
@@ -360,7 +393,7 @@ export function UploadPanel() {
         <div className="mt-4 p-3 bg-primary bg-opacity-20 border-4 border-foreground">
           <p className="text-sm font-bold flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            Analyzing {analyzingFiles.size} document{analyzingFiles.size > 1 ? 's' : ''}...
+            Analyzing & encrypting {analyzingFiles.size} document{analyzingFiles.size > 1 ? 's' : ''}...
           </p>
         </div>
       )}
@@ -368,8 +401,8 @@ export function UploadPanel() {
       {/* Privacy Note */}
       <div className="mt-6 p-4 bg-accent bg-opacity-30 border-4 border-foreground">
         <p className="text-sm font-bold flex items-start gap-2">
-          <span>🤖</span>
-          <span>AI Analysis: Documents are analyzed by OpenAI to extract financial insights, then encrypted in your SecretVault. Lenders see only AI-generated summaries, never raw documents.</span>
+          <span>🔐</span>
+          <span>Enhanced Security: Documents analyzed by AI, then encrypted in your personal SecretVault using Nillions Private Storage. Only you can decrypt and access raw documents. Lenders see AI summaries only.</span>
         </p>
       </div>
     </NeoCard>

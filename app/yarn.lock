@@ -1002,6 +1002,15 @@
   resolved "https://registry.yarnpkg.com/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-15.2.3.tgz#727b90c7dcc2279344115a94b99d93d452956f02"
   integrity sha512-gHYS9tc+G2W0ZC8rBL+H6RdtXIyk40uLiaos0yj5US85FNhbFEndMA2nW3z47nzOWiSvXTZ5kBClc3rD0zJg0w==
 
+"@nillion/blindfold@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@nillion/blindfold/-/blindfold-0.1.0.tgz#a4e2cc22f5224b8d136fa8e1934349eddee18256"
+  integrity sha512-tqdfoxk+lTTD9llr7iEyb49iWGGVlBDpF6erx8HWvrL6RZFrjr+0sN9XNZGB4OfFVa7ZsduXcAso1msAObMeuw==
+  dependencies:
+    bigint-crypto-utils "^3.3.0"
+    libsodium-wrappers-sumo "^0.7.15"
+    paillier-bigint "^3.4.3"
+
 "@nillion/nilai-ts@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@nillion/nilai-ts/-/nilai-ts-0.2.0.tgz#e2a0272d520692b623688d6e70ed95e7166f850b"
@@ -1018,7 +1027,7 @@
   optionalDependencies:
     buffer "^6.0.3"
 
-"@nillion/nuc@0.1.1":
+"@nillion/nuc@0.1.1", "@nillion/nuc@^0.1.1":
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/@nillion/nuc/-/nuc-0.1.1.tgz#85846eff60049c3d3c2e6852a5c27bea1a210e6e"
   integrity sha512-AvTcO05KSwuYgcSyIr0u2J3T3eWjkTHrVLAuwI3iAlZNhyEeI2wl1hr8S5GoaPrs/ANXwjsAhWmuiKP0+40p8w==
@@ -2753,6 +2762,11 @@ big.js@6.2.2:
   version "6.2.2"
   resolved "https://registry.npmjs.org/big.js/-/big.js-6.2.2.tgz"
   integrity sha512-y/ie+Faknx7sZA5MfGA2xKlu0GDv8RWrXGsmlteyJQ2lvoKv9GBK/fpRMc2qlSoBAgNxrixICFCBefIq8WCQpQ==
+
+bigint-crypto-utils@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/bigint-crypto-utils/-/bigint-crypto-utils-3.3.0.tgz#72ad00ae91062cf07f2b1def9594006c279c1d77"
+  integrity sha512-jOTSb+drvEDxEq6OuUybOAv/xxoh3cuYRUIPyu8sSHQNKM303UQ2R1DAo45o1AkcIXw6fzbaFI1+xGGdaXs2lg==
 
 blakejs@1.2.1:
   version "1.2.1"
@@ -4726,7 +4740,7 @@ libsodium-sumo@^0.7.15:
   resolved "https://registry.yarnpkg.com/libsodium-sumo/-/libsodium-sumo-0.7.15.tgz#91c1d863fe3fbce6d6b9db1aadaa622733a1d007"
   integrity sha512-5tPmqPmq8T8Nikpm1Nqj0hBHvsLFCXvdhBFV7SGOitQPZAA6jso8XoL0r4L7vmfKXr486fiQInvErHtEvizFMw==
 
-libsodium-wrappers-sumo@^0.7.11:
+libsodium-wrappers-sumo@^0.7.11, libsodium-wrappers-sumo@^0.7.15:
   version "0.7.15"
   resolved "https://registry.yarnpkg.com/libsodium-wrappers-sumo/-/libsodium-wrappers-sumo-0.7.15.tgz#0ef2a99b4b17e8385aa7e6850593660dbaf5fb40"
   integrity sha512-aSWY8wKDZh5TC7rMvEdTHoyppVq/1dTSAeAR7H6pzd6QRT3vQWcT5pGwCotLcpPEOLXX6VvqihSPkpEhYAjANA==
@@ -5350,6 +5364,13 @@ p-try@^2.0.0:
   version "2.2.0"
   resolved "https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
+
+paillier-bigint@^3.4.3:
+  version "3.4.3"
+  resolved "https://registry.yarnpkg.com/paillier-bigint/-/paillier-bigint-3.4.3.tgz#6de37d6a334540298aeff633a9a5268b32ec7bb6"
+  integrity sha512-82otV7H/gBiQeYjsmc/Zo029GoJDnAFyoMWQMsUgfya50W8dYRVgvUR/lHO0yrS7MfMwgE8fCeEIBF0IucLYFw==
+  dependencies:
+    bigint-crypto-utils "^3.3.0"
 
 parent-module@^1.0.0:
   version "1.0.1"

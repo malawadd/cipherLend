@@ -106,6 +106,32 @@ export const getProfile = query({
   },
 });
 
+export const getUserByClerkId = query({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (!user) return null;
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      profile: profile || null,
+    };
+  },
+});
+
 export const updateProfile = mutation({
   args: {
     displayName: v.string(),

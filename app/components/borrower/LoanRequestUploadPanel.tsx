@@ -30,7 +30,14 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
   const deleteDocument = useMutation(api.documents.deleteDocument);
   const { showToast } = useToast();
   
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const keypair = useQuery(
+    api.keypairs.getUserKeypair,
+    currentUser ? { userId: currentUser._id } : 'skip'
+  );
+
   const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingKeypair, setIsGeneratingKeypair] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [analyzingFiles, setAnalyzingFiles] = useState<Set<string>>(new Set());
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
@@ -69,6 +76,11 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
   };
 
   const handleFileUpload = async (files: FileList | File[]) => {
+    if (!keypair) {
+      showToast('Please setup SecretVault first to securely store documents', 'danger');
+      return;
+    }
+
     const fileArray = Array.from(files);
     
     const imageFiles = fileArray.filter(file => 
@@ -192,7 +204,7 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
     if (files && files.length > 0) {
       handleFileUpload(files);
     }
-  }, []);
+  }, [handleFileUpload]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -205,7 +217,42 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
   };
 
   const openFileDialog = () => {
+    if (!keypair) {
+      showToast('Please setup SecretVault first to securely store documents', 'danger');
+      return;
+    }
     fileInputRef.current?.click();
+  };
+
+  const handleGenerateKeypair = async () => {
+    setIsGeneratingKeypair(true);
+    try {
+      showToast('Generating SecretVault keypair...', 'info');
+      
+      const response = await fetch('/api/generate-keypair', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate keypair');
+      }
+
+      const data = await response.json();
+      showToast(`✅ SecretVault keypair generated! DID: ${data.keypair.did}`, 'success');
+      
+    } catch (error) {
+      console.error('Keypair generation error:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Failed to generate keypair',
+        'danger'
+      );
+    } finally {
+      setIsGeneratingKeypair(false);
+    }
   };
 
   if (compact) {
@@ -213,7 +260,13 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
       <NeoCard bg="bg-white">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-lg font-black uppercase">Supporting Documents</h4>
-          <NeoButton size="sm" variant="primary" onClick={openFileDialog} disabled={isUploading}>
+          <NeoButton 
+            size="sm" 
+            variant="primary" 
+            onClick={openFileDialog} 
+            disabled={isUploading || !keypair}
+            title={!keypair ? 'Setup SecretVault first to upload documents' : 'Add documents'}
+          >
             + Add Documents
           </NeoButton>
         </div>
@@ -225,7 +278,34 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
           accept="image/*,.pdf"
           onChange={handleFileInputChange}
           className="hidden"
+          disabled={!keypair}
         />
+
+        {!keypair && (
+          <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 rounded">
+            <p className="text-xs font-bold text-yellow-800 dark:text-yellow-200 mb-2">
+              🔑 Setup SecretVault first to upload documents securely
+            </p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
+              Generate a keypair to enable encrypted document storage
+            </p>
+            <NeoButton
+              size="sm"
+              variant="accent"
+              onClick={handleGenerateKeypair}
+              disabled={isGeneratingKeypair}
+            >
+              {isGeneratingKeypair ? (
+                <>
+                  <span className="animate-spin mr-1">⏳</span>
+                  Generating...
+                </>
+              ) : (
+                '🔐 Generate SecretVault Keypair'
+              )}
+            </NeoButton>
+          </div>
+        )}
 
         {!documents ? (
           <p className="text-sm font-semibold text-gray-600">Loading documents...</p>
@@ -284,16 +364,55 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
         <NeoBadge variant="accent">{documents?.length || 0} documents</NeoBadge>
       </div>
 
+      {!keypair && (
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-4 border-yellow-400 rounded">
+          <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200 mb-2">
+            🔑 SecretVault Setup Required
+          </p>
+          <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-4">
+            Generate a keypair to enable encrypted document storage for this loan request. 
+            This ensures your financial documents are stored securely and privately.
+          </p>
+          <NeoButton
+            variant="primary"
+            onClick={handleGenerateKeypair}
+            disabled={isGeneratingKeypair}
+          >
+            {isGeneratingKeypair ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Generating SecretVault Keypair...
+              </>
+            ) : (
+              '🔐 Generate SecretVault Keypair'
+            )}
+          </NeoButton>
+        </div>
+      )}
+
+      {keypair && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-400 rounded">
+          <p className="text-xs font-bold text-green-800 dark:text-green-200 mb-1">
+            ✅ SecretVault Ready
+          </p>
+          <p className="text-xs text-green-700 dark:text-green-300 font-mono">
+            DID: {keypair.did}
+          </p>
+        </div>
+      )}
+
       <div 
-        className={`border-4 border-dashed p-6 mb-6 text-center transition-colors cursor-pointer ${
+        className={`border-4 border-dashed p-6 mb-6 text-center transition-colors ${
+          !keypair ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        } ${
           dragActive 
             ? 'border-primary bg-primary bg-opacity-20' 
             : 'border-foreground bg-secondary bg-opacity-20'
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={openFileDialog}
+        onDragOver={keypair ? handleDragOver : undefined}
+        onDragLeave={keypair ? handleDragLeave : undefined}
+        onDrop={keypair ? handleDrop : undefined}
+        onClick={keypair ? openFileDialog : undefined}
       >
         <input
           ref={fileInputRef}
@@ -302,23 +421,23 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
           accept="image/*,.pdf"
           onChange={handleFileInputChange}
           className="hidden"
+          disabled={!keypair}
         />
         
         <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
         <p className="font-bold mb-2">
-          {dragActive ? 'Drop files here' : 'Add Supporting Documents'}
+          {dragActive ? 'Drop files here' : keypair ? 'Add Supporting Documents' : 'Setup SecretVault to Upload'}
         </p>
         <p className="text-sm font-semibold text-gray-600 mb-2">
           Bank statements, income proof, bills, mobile money records
         </p>
         <p className="text-xs font-bold text-gray-500">
-          JPG, PNG, PDF • AI analyzes automatically
+          JPG, PNG, PDF • AI analyzes automatically {keypair ? '+ SecretVault encryption' : '(Requires SecretVault setup)'}
         </p>
       </div>
 
-      {/* Document List */}
       {!documents ? (
         <div className="text-center py-8 border-4 border-foreground bg-gray-50">
           <p className="font-semibold text-gray-600">Loading...</p>
@@ -381,17 +500,15 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
         </div>
       )}
 
-      {/* Analyzing Status */}
       {analyzingFiles.size > 0 && (
         <div className="mt-4 p-3 bg-primary bg-opacity-20 border-4 border-foreground">
-          <p className="text-sm font-bold flex items-center gap-2">
+          <div className="text-sm font-bold flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             Analyzing {analyzingFiles.size} document{analyzingFiles.size > 1 ? 's' : ''}...
-          </p>
+          </div>
         </div>
       )}
 
-      {/* Privacy Note */}
       <div className="mt-6 p-4 bg-accent bg-opacity-30 border-4 border-foreground">
         <p className="text-sm font-bold flex items-start gap-2">
           <span>🔒</span>

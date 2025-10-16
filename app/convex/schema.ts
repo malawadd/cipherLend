@@ -89,4 +89,14 @@ export default defineSchema({
     action: v.string(),
     timestamp: v.number(),
   }).index("by_user", ["userId"]),
+
+  // Nillion keypairs for SecretVaults
+  keypairs: defineTable({
+    userId: v.id("users"),
+    publicKey: v.string(),
+    privateKey: v.string(), // Encrypted or stored securely
+    did: v.string(), // Decentralized identifier
+    createdAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_did", ["did"]),
 });
