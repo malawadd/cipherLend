@@ -12,6 +12,7 @@ import { NeoInput } from '@/components/ui/NeoInput';
 import { PayoutWalletSelector } from '@/components/borrower/PayoutWalletSelector';
 import { useToast } from '@/components/ui/NeoToast';
 import { LoanRequestUploadPanel } from '@/components/borrower/LoanRequestUploadPanel';
+import { MarketplaceStatus } from '@/components/borrower/MarketplaceStatus';
 import { formatCurrency, formatDuration, getStatusColor, getStatusLabel, isValidShortId } from '@/lib/loan-utils';
 
 interface Props {
@@ -93,35 +94,7 @@ export default function BorrowRequestDetailPage({ params }: Props) {
     }
   };
 
-  const handlePublish = async () => {
-    if (!loanRequest) return;
-    
-    try {
-      await updateLoanRequest({
-        shortId: shortId,
-        status: 'active',
-        isPublished: true,
-      });
-      showToast('Request published to marketplace', 'success');
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to publish request', 'danger');
-    }
-  };
 
-  const handleUnpublish = async () => {
-    if (!loanRequest) return;
-    
-    try {
-      await updateLoanRequest({
-        shortId: shortId,
-        status: 'paused',
-        isPublished: false,
-      });
-      showToast('Request removed from marketplace', 'info');
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to unpublish request', 'danger');
-    }
-  };
 
   if (loanRequest === undefined) {
     return (
@@ -328,44 +301,7 @@ export default function BorrowRequestDetailPage({ params }: Props) {
 
           {/* Publishing Controls */}
           {!isEditing && (
-            <NeoCard bg="bg-primary" className="bg-opacity-20">
-              <h3 className="text-xl font-black uppercase mb-4">Marketplace Status</h3>
-              
-              {loanRequest.status === 'draft' ? (
-                <div className="space-y-4">
-                  <p className="font-semibold">
-                    This request is in draft mode. Publish it to make it visible to lenders.
-                  </p>
-                  <div className="flex gap-2">
-                    <NeoButton variant="primary" onClick={handlePublish}>
-                      Publish to Marketplace
-                    </NeoButton>
-                  </div>
-                </div>
-              ) : isPublished ? (
-                <div className="space-y-4">
-                  <p className="font-semibold">
-                    ✅ This request is live on the marketplace. Lenders can see and request assessments.
-                  </p>
-                  <div className="flex gap-2">
-                    <NeoButton variant="danger" onClick={handleUnpublish}>
-                      Remove from Marketplace
-                    </NeoButton>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="font-semibold">
-                    This request is paused. It`&apos;`s not visible to lenders.
-                  </p>
-                  <div className="flex gap-2">
-                    <NeoButton variant="primary" onClick={handlePublish}>
-                      Republish to Marketplace
-                    </NeoButton>
-                  </div>
-                </div>
-              )}
-            </NeoCard>
+            <MarketplaceStatus loanRequest={loanRequest} />
           )}
 
           {/* Assessment Activity */}

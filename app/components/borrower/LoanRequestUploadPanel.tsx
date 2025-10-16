@@ -391,11 +391,11 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
       )}
 
       {keypair && (
-        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-400 rounded">
-          <p className="text-xs font-bold text-green-800 dark:text-green-200 mb-1">
+        <div className="mb-4 p-3 bg-green-50  border-2 border-green-400 rounded">
+          <p className="text-xs font-bold text-green-800  mb-1">
             ✅ SecretVault Ready
           </p>
-          <p className="text-xs text-green-700 dark:text-green-300 font-mono">
+          <p className="text-xs text-green-700  font-mono">
             DID: {keypair.did}
           </p>
         </div>
@@ -512,7 +512,7 @@ export function LoanRequestUploadPanel({ loanRequestId, shortId, compact = false
       <div className="mt-6 p-4 bg-accent bg-opacity-30 border-4 border-foreground">
         <p className="text-sm font-bold flex items-start gap-2">
           <span>🔒</span>
-          <span>Documents uploaded here are linked to this specific loan request. Lenders will only see AI-generated summaries when assessing your application.</span>
+          <span>Documents uploaded here are linked to this specific loan request. Lenders will only see the blind computer AI-generated trust score.</span>
         </p>
       </div>
     </NeoCard>

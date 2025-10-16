@@ -128,7 +128,13 @@ export const updateLoanRequest = mutation({
     allowAssessments: v.optional(v.boolean()),
     payoutWallet: v.optional(v.id("wallets")),
     status: v.optional(v.string()),
+    blockchainTxHash: v.optional(v.string()),
+    isOnChain: v.optional(v.boolean()),
     isPublished: v.optional(v.boolean()),
+    // Funding fields
+    isFunded: v.optional(v.boolean()),
+    fundedBy: v.optional(v.string()),
+    fundingTxHash: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -158,7 +164,12 @@ export const updateLoanRequest = mutation({
     if (args.allowAssessments !== undefined) updates.allowAssessments = args.allowAssessments;
     if (args.payoutWallet !== undefined) updates.payoutWallet = args.payoutWallet;
     if (args.status !== undefined) updates.status = args.status;
+    if (args.blockchainTxHash !== undefined) updates.blockchainTxHash = args.blockchainTxHash;
+    if (args.isOnChain !== undefined) updates.isOnChain = args.isOnChain;
     if (args.isPublished !== undefined) updates.isPublished = args.isPublished;
+    if (args.isFunded !== undefined) updates.isFunded = args.isFunded;
+    if (args.fundedBy !== undefined) updates.fundedBy = args.fundedBy;
+    if (args.fundingTxHash !== undefined) updates.fundingTxHash = args.fundingTxHash;
 
     await ctx.db.patch(loanRequest._id, updates);
     return args.shortId;
@@ -407,6 +418,10 @@ export const getPublicLoanRequestByShortId = query({
       existingAssessment,
       totalAssessments: allAssessments.filter(a => a.status === 'completed').length,
       canRequestAssessment: loanRequest.allowAssessments && !existingAssessment,
+      // Include funding fields
+      isFunded: loanRequest.isFunded || false,
+      fundedBy: loanRequest.fundedBy,
+      fundingTxHash: loanRequest.fundingTxHash,
     };
   },
 });

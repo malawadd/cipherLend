@@ -2,12 +2,12 @@
 
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { mainnet } from 'wagmi/chains';
+import { sepolia } from 'wagmi/chains';
 
 export const config = getDefaultConfig({
   appName: 'cipherLend',
   projectId: 'YOUR_PROJECT_ID', // Get this from WalletConnect Cloud
-  chains: [mainnet], // Start with mainnet
+  chains: [sepolia], // Start with mainnet
   multiInjectedProviderDiscovery: true,
   ssr: true,
 });

@@ -8,6 +8,7 @@ import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoBadge } from '@/components/ui/NeoBadge';
 import { AssessmentModal } from '@/components/lender/AssessmentModal';
+import { FundProposal } from '@/components/lender/FundProposal';
 import { useToast } from '@/components/ui/NeoToast';
 import { formatCurrency, formatDuration } from '@/lib/loan-utils';
 
@@ -208,10 +209,43 @@ export default function LendRequestDetailPage({ params }: Props) {
                 </div>
               )}
             </NeoCard>
+
+            <NeoCard bg="bg-success" className="bg-opacity-20">
+              <h3 className="text-xl font-black uppercase mb-4">Fund This Proposal</h3>
+              <FundProposal 
+                loanRequest={{
+                  shortId: loanRequest.shortId,
+                  amount: loanRequest.amount,
+                  blockchainTxHash: loanRequest.blockchainTxHash,
+                  borrowerName: loanRequest.borrowerName,
+                  isFunded: loanRequest.isFunded,
+                  fundedBy: loanRequest.fundedBy,
+                  fundingTxHash: loanRequest.fundingTxHash,
+                }}
+                onSuccess={() => showToast('Proposal funded successfully!', 'success')}
+              />
+            </NeoCard>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Funding Action */}
+            {/* <NeoCard bg="bg-success" className="bg-opacity-20">
+              <h3 className="text-xl font-black uppercase mb-4">Fund This Proposal</h3>
+              <FundProposal 
+                loanRequest={{
+                  shortId: loanRequest.shortId,
+                  amount: loanRequest.amount,
+                  blockchainTxHash: loanRequest.blockchainTxHash,
+                  borrowerName: loanRequest.borrowerName,
+                  isFunded: loanRequest.isFunded,
+                  fundedBy: loanRequest.fundedBy,
+                  fundingTxHash: loanRequest.fundingTxHash,
+                }}
+                onSuccess={() => showToast('Proposal funded successfully!', 'success')}
+              />
+            </NeoCard> */}
+
             {/* Assessment Action */}
             <NeoCard bg="bg-primary" className="bg-opacity-20">
               <h3 className="text-xl font-black uppercase mb-4">Private Assessment</h3>
@@ -227,7 +261,10 @@ export default function LendRequestDetailPage({ params }: Props) {
                   <p className="text-xs font-semibold text-gray-600">
                     The borrower has chosen not to allow private assessments for this request.
                   </p>
+                  
                 </div>
+
+                
               ) : hasExistingAssessment ? (
                 <div className="text-center py-6">
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${

@@ -61,10 +61,21 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
     payoutWallet: v.optional(v.id("wallets")),
     isPublished: v.optional(v.boolean()),
+    // Blockchain integration fields
+    blockchainTxHash: v.optional(v.string()),
+    isOnChain: v.optional(v.boolean()),
+    // Funding fields
+    isFunded: v.optional(v.boolean()),
+    fundedBy: v.optional(v.string()),
+    fundingTxHash: v.optional(v.string()),
+    payoutWalletAddress: v.optional(v.string()),
+
   })
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
-    .index("by_shortId", ["shortId"]),
+    .index("by_shortId", ["shortId"])
+    .index("by_blockchain", ["isOnChain"])
+    .index("by_funding", ["isFunded"]),
 
   assessmentRequests: defineTable({
     lenderId: v.id("users"),
