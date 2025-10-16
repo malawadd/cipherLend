@@ -8,7 +8,7 @@ import { NeoBadge } from '@/components/ui/NeoBadge';
 // import { WalletManager } from '@/components/borrower/WalletManager';
 import { BorrowRequestCard } from '@/components/borrower/BorrowRequestCard';
 import Link from 'next/link';
-import { StoreToVaultButton } from '@/components/ui/StoreToVaultButton';
+// import { StoreToVaultButton } from '@/components/ui/StoreToVaultButton';
 
 export default function BorrowPage() {
   const loanRequests = useQuery(api.loanRequests.listMyLoanRequests);
@@ -35,7 +35,7 @@ export default function BorrowPage() {
           <p className="text-xl font-semibold">Manage your loan requests and track assessment progress</p>
         </div>
 
-        <StoreToVaultButton />
+        {/* <StoreToVaultButton /> */}
         {/* Quick Stats */}
         <div className="grid lg:grid-cols-4 gap-6 mb-8">
           <NeoCard bg="bg-primary">
