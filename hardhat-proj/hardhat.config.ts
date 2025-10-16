@@ -38,6 +38,11 @@ const config: HardhatUserConfig = {
     },
     
   },
+  verify:{
+    etherscan: {
+      apiKey: configVariable("ETHERSCAN_API_KEY") || "",
+    },
+  }
 };
 
 export default config;
